@@ -66,7 +66,7 @@ func main() {
 		json.NewEncoder(w).Encode(result)
 	})
 
-	conf.Log.Info("Starting server")
+	conf.Log.Info("Starting server at " + conf.LstAddr.String())
 	if err := http.ListenAndServe(conf.LstAddr.String(), nil); err != nil {
 		conf.Log.Errorf("Serve error: %v", err)
 		os.Exit(1)

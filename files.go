@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 	"path"
-
-	"github.com/davidmz/gotools/mustbe"
 )
 
 type DataDir struct{ dirName string }
@@ -14,20 +12,16 @@ func (d *DataDir) eTagFile() string    { return path.Join(d.dirName, "etag.txt")
 func (d *DataDir) tmpBaseFile() string { return d.baseFile() + ".tmp" }
 func (d *DataDir) tmpETagFile() string { return d.eTagFile() + ".tmp" }
 
-func (d *DataDir) cleanTemps() (eerr error) {
-	defer mustbe.Catched(&eerr)
-	mustbe.OK(os.Remove(d.tmpBaseFile()))
-	mustbe.OK(os.Remove(d.tmpETagFile()))
-	return
+func (d *DataDir) cleanTemps() {
+	os.Remove(d.tmpBaseFile())
+	os.Remove(d.tmpETagFile())
 }
 
-func (d *DataDir) moveTemps() (eerr error) {
-	defer mustbe.Catched(&eerr)
-	mustbe.OK(os.Remove(d.baseFile()))
-	mustbe.OK(os.Remove(d.eTagFile()))
-	mustbe.OK(os.Rename(d.tmpBaseFile(), d.baseFile()))
-	mustbe.OK(os.Rename(d.tmpETagFile(), d.eTagFile()))
-	return
+func (d *DataDir) moveTemps() {
+	os.Remove(d.baseFile())
+	os.Remove(d.eTagFile())
+	os.Rename(d.tmpBaseFile(), d.baseFile())
+	os.Rename(d.tmpETagFile(), d.eTagFile())
 }
 
 func FileExists(filename string) (ok bool, err error) {
