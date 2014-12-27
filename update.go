@@ -1,0 +1,26 @@
+package main
+
+import "time"
+
+func updateRoutine(conf *Config) {
+	clock := time.Tick(conf.UpdInterval)
+	for _ = range clock {
+		conf.Log.Info("Looking for new base...")
+		wasChanged, err := downloadGeoBase(conf)
+		if err != nil {
+			conf.Log.Warnf("Download error: %v", err)
+			continue
+		}
+		if !wasChanged {
+			conf.Log.Info("Base wasn't changed")
+			continue
+		}
+		conf.Log.Info("Parsing new base...")
+		err = parseAndStoreGeoBase(conf)
+		if err != nil {
+			conf.Log.Warnf("Parse error: %v", err)
+			continue
+		}
+		conf.Log.Info("Base was updated")
+	}
+}
