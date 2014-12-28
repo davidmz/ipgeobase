@@ -14,6 +14,8 @@ type MemcacheHandler struct {
 }
 
 func (m *MemcacheHandler) ServeMemcache(req *mmc.Request, resp *mmc.Response) error {
+	m.Log.Debugf("Memcache command %q", req)
+
 	switch req.Command {
 
 	case "get", "gets": // retrieve commands

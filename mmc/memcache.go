@@ -84,8 +84,8 @@ func (c *connection) run(handler Handler) {
 	c.Close()
 }
 
-func (s *connection) readRequest() (*Request, error) {
-	line, err := readLine(s, maxLineLength)
+func (c *connection) readRequest() (*Request, error) {
+	line, err := readLine(c, maxLineLength)
 	if err != nil {
 		return nil, err
 	}
@@ -93,13 +93,16 @@ func (s *connection) readRequest() (*Request, error) {
 	if len(parts) == 0 {
 		parts = append(parts, "")
 	}
-	return &Request{Command: parts[0], Args: parts[1:]}, nil
+	return &Request{
+		Command: parts[0],
+		Args:    parts[1:],
+		conn:    c,
+	}, nil
 }
 
-func (s *connection) readRequestBody(length int) ([]byte, error) {
+func (c *connection) readRequestBody(length int) ([]byte, error) {
 	body := make([]byte, length+len(eol))
-	_, err := io.ReadFull(s, body)
-	if err != nil {
+	if _, err := io.ReadFull(c, body); err != nil {
 		return nil, err
 	}
 	if string(body[length:]) != eol {
