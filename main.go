@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/davidmz/ipgeobase/mmc"
+	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 )
 
 const (
@@ -27,6 +28,7 @@ var (
 	showHelp       = flag.Bool("help", false, "Show help")
 	showVersion    = flag.Bool("version", false, "Show version number")
 	asMemcache     = flag.Bool("memcache", false, "Serve memcache protocol")
+	asMsgPackRPC   = flag.Bool("msgpack-rpc", false, "Serve MessagePack-RPC protocol")
 )
 
 func main() {
@@ -71,14 +73,15 @@ func main() {
 		go updateRoutine(conf)
 	}
 
-	if *asMemcache {
-		conf.Log.Info("Starting memcache server at " + conf.LstAddr.String())
+	conf.Log.Info("Starting TCP server at " + conf.LstAddr.String())
 
-		ln, err := net.Listen("tcp", conf.LstAddr.String())
-		if err != nil {
-			conf.Log.Errorf("Serve error: %v", err)
-			os.Exit(1)
-		}
+	ln, err := net.Listen("tcp", conf.LstAddr.String())
+	if err != nil {
+		conf.Log.Errorf("Server error: %v", err)
+		os.Exit(1)
+	}
+
+	if *asMemcache {
 		h := &MemcacheHandler{conf}
 		for {
 			conn, err := ln.Accept()
@@ -90,21 +93,26 @@ func main() {
 			go mmc.NewSession(conn, h)
 		}
 
-	} else {
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			ip := r.URL.Query().Get("ip")
-			base := conf.VBase.Load().(*GeoBase)
-			result := base.Find(ip)
-			w.Header().Set("Server", ServerName)
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			json.NewEncoder(w).Encode(result)
-		})
+	} else if *asMsgPackRPC {
+		rpc.NewServer(
+			&MPResolver{conf},
+			true,
+			log.New(&DebugLogWriter{conf.Log}, "", 0),
+		).Listen(ln).Run()
 
-		conf.Log.Info("Starting HTTP server at " + conf.LstAddr.String())
-		if err := http.ListenAndServe(conf.LstAddr.String(), nil); err != nil {
-			conf.Log.Errorf("Serve error: %v", err)
+	} else {
+
+		s := &http.Server{
+			Handler:        &HttpHandler{conf},
+			ReadTimeout:    10 * time.Second,
+			WriteTimeout:   10 * time.Second,
+			MaxHeaderBytes: 8 << 10,
+		}
+
+		if err := s.Serve(ln); err != nil {
+			conf.Log.Errorf("HTTP serve error: %v", err)
 			os.Exit(1)
 		}
+
 	}
 }

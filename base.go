@@ -34,6 +34,31 @@ type SearchResult struct {
 	*CityInfo
 }
 
+func (s SearchResult) ToMap() (mapa map[string]interface{}) {
+	mapa = make(map[string]interface{})
+	mapa["ip"] = s.Ip
+
+	if s.GeoBaseBlock == nil {
+		mapa["error"] = s.Error
+		return
+	}
+
+	mapa["inetnum"] = s.Interval
+	mapa["country"] = s.Country
+
+	if s.CityInfo == nil {
+		return
+	}
+
+	mapa["city"] = s.Name
+	mapa["region"] = s.Region
+	mapa["district"] = s.District
+	mapa["lat"] = s.Lat
+	mapa["lng"] = s.Lng
+
+	return
+}
+
 func NewGeoBase() *GeoBase {
 	return &GeoBase{
 		Blocks: make([]*GeoBaseBlock, 0),
