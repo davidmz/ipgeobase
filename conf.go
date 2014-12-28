@@ -17,6 +17,7 @@ type Config struct {
 	Log   *golog.Logger
 	VBase *atomic.Value
 
+	PassiveMode bool
 	Dir         *DataDir
 	GeoBaseUrl  string
 	LstAddr     net.Addr
@@ -33,8 +34,13 @@ func ExitIfError(conf *Config, err error) {
 
 func GetConfig() *Config {
 	conf := &Config{
-		Log:   golog.GetLogger("ipgeo"),
-		VBase: &atomic.Value{},
+		Log:         golog.GetLogger("ipgeo"),
+		VBase:       &atomic.Value{},
+		PassiveMode: *passiveMode,
+	}
+
+	if !*debugLevel {
+		conf.Log.Level = golog.INFO
 	}
 
 	if *showHelp {
@@ -53,13 +59,24 @@ func GetConfig() *Config {
 		ExitIfError(conf, fmt.Errorf("Directory name is required"))
 	}
 
-	// Write test
-	probeFileName := filepath.Join(*dirName, "probe")
-	if f, err := os.Create(probeFileName); err != nil {
+	if conf.PassiveMode {
+		// existence check
+		inf, err := os.Stat(*dirName)
 		ExitIfError(conf, err)
+		if !inf.IsDir() {
+			ExitIfError(conf, fmt.Errorf("Directory name required"))
+		}
+
 	} else {
-		f.Close()
-		os.Remove(probeFileName)
+		// Write test
+		probeFileName := filepath.Join(*dirName, "probe")
+		if f, err := os.Create(probeFileName); err != nil {
+			ExitIfError(conf, err)
+		} else {
+			f.Close()
+			os.Remove(probeFileName)
+		}
+
 	}
 
 	conf.Dir = &DataDir{*dirName}
