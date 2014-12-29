@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ivpusic/golog"
+	"github.com/ivpusic/golog/appenders"
 )
 
 type Config struct {
@@ -37,6 +38,10 @@ func GetConfig() *Config {
 		Log:         golog.GetLogger("ipgeo"),
 		VBase:       &atomic.Value{},
 		PassiveMode: *passiveMode,
+	}
+
+	if *logFile != "" {
+		conf.Log.Enable(appenders.File(golog.Conf{"path": *logFile}))
 	}
 
 	if !*debugLevel {

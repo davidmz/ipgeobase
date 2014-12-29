@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -10,11 +9,10 @@ import (
 	"time"
 
 	"github.com/davidmz/ipgeobase/mmc"
-	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 )
 
 const (
-	Version    = "1.1.0"
+	Version    = "1.1.1"
 	ServerName = "IPGeoBase-Go/" + Version
 )
 
@@ -23,12 +21,12 @@ var (
 	geoBaseURL     = flag.String("url", "http://ipgeobase.ru/files/db/Main/geo_files.zip", "URL of IPGeoBase zip archive")
 	lstAddress     = flag.String("listen", "localhost:7364", "IP address and port to listen")
 	updateInterval = flag.Duration("interval", time.Hour, "Update interval")
+	logFile        = flag.String("log", "", "File name for log output")
 	passiveMode    = flag.Bool("passive", false, "Passive mode: do not write to data directory")
 	debugLevel     = flag.Bool("debug", false, "Debug level log")
 	showHelp       = flag.Bool("help", false, "Show help")
 	showVersion    = flag.Bool("version", false, "Show version number")
 	asMemcache     = flag.Bool("memcache", false, "Serve memcache protocol")
-	asMsgPackRPC   = flag.Bool("msgpack-rpc", false, "Serve MessagePack-RPC protocol")
 )
 
 func main() {
@@ -92,13 +90,6 @@ func main() {
 			}
 			go mmc.NewSession(conn, h)
 		}
-
-	} else if *asMsgPackRPC {
-		rpc.NewServer(
-			&MPResolver{conf},
-			true,
-			log.New(&DebugLogWriter{conf.Log}, "", 0),
-		).Listen(ln).Run()
 
 	} else {
 
