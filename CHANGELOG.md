@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.1 - 2014-12-29
+### Added
+- Write log to file (`-log` flag)
+
+### Changed 
+- Recommended `go get …` path: `gopkg.in/davidmz/ipgeobase.v1`
+
 ## 1.1.0 - 2014-12-28
 ### Added
 - Memcache(d) server with `get` and `gets` methods (`-memcache` flag)
